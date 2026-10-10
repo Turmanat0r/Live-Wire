@@ -142,6 +142,7 @@ second organizer running their own tournament would need.
 | 4 | `supabase-one-entry-per-person.sql` | Unique name, phone and board code |
 | 5 | `supabase-step3-shared-devices.sql` | Lets one angler use one entry from several devices |
 | 6 | `supabase-step4-photo-integrity.sql` | Stops a catch photo being swapped after it is filed |
+| 7 | `supabase-step5-director-fields-and-beacons.sql` | Keeps review, fees, disqualification and codes the director's; lets the field see a beacon |
 
 Between 2 and 3 there is a manual step, described in 3: enable anonymous
 sign-ins, open the app once so a device actually exists, and create the
@@ -180,6 +181,29 @@ select t.tablename
 
 `config` is excluded on purpose: it is director-only and none of its policies
 read `owner`.
+
+## Step 5: what only the director decides
+
+Before step 5, an angler owned their whole entry and their whole catch, so
+their own device could approve a catch, change a reviewed length, mark their
+fee paid or lift a disqualification - and a phone that had not synced yet could
+do the last one by accident, by writing back its stale copy on the next
+check-in. A raised beacon was also invisible to every other angler.
+
+Step 5 lets an angler's device change only what the app itself changes: their
+check-ins, and the length of a catch that is still pending. Everything else
+keeps its value, and a reviewed catch refuses changes with error 42501, which
+the app already reports as "the tournament server refused this". The director,
+the SQL editor and `claim_entry()` are not affected.
+
+It finishes by listing what it created. Three rows means it worked:
+
+```
+kind     name                            on_table
+policy   signals_read_beacons            signals
+trigger  anglers_guard_director_fields   anglers
+trigger  catches_guard_review            catches
+```
 
 ## Housekeeping
 
